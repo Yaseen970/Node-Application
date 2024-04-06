@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Node.js Quiz</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    .star {
+      color: red;
+    }
+  </style>
+  <script>
+    async function fetchQuestions() {
+      const response = await fetch('http://localhost:3000/questions');
+      const questions = await response.json();
+
+      const mainElement = document.querySelector('main');
+      mainElement.innerHTML = '';
+      const quest = questions.que
+      quest.forEach((question, index) => {
+        const questionElement = document.createElement('div');
+        questionElement.innerHTML = `
+          <h2>Question ${question.qid}<span id="star${question.qid}" class="star">*</span></h2>
+          <h3>${question.question}</h3>
+          <ul>
+            ${Object.keys(question.options).map(key => `<li><label><input type="radio" name="answer${question.qid}" value="${question.options[key]}"> ${question.options[key]}</label></li>`).join('')}
+          </ul>
+        `;
+        mainElement.appendChild(questionElement);
+      });
+
+      const submitButton = document.createElement('button');
+      submitButton.textContent = 'Submit Answers';
+      submitButton.addEventListener('click', submitAnswers);
+      mainElement.appendChild(submitButton);
+    }
+
+    async function submitAnswers() {
+      const answers = {};
+      const questions = document.querySelectorAll('[type="radio"]');
+      questions.forEach((question, index) => {
+        if (question.checked) {
+          const questionIndex = question.name.replace('answer', '');
+          answers[questionIndex] = question.value;
+        }
+      });
+      console.log('answers',Object.keys(answers).length,questions.length/4);
+      console.log('answers',answers);
+      if (Object.keys(answers).length !== questions.length/4) {
+        alert('Please answer all questions before submitting.');
+        return;
+      }
+
+      
+      const response = await fetch('http://localhost:3000/submitAnswers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(answers)
+      });
+      if(response.status==200){
+        const results = await response.json();
+        console.log(results);
+      const mainElement = document.querySelector('main');
+      mainElement.innerHTML = '';
+      const scoreElement = document.createElement('div')
+      scoreElement.innerHTML = `
+      <div  style="width: 200px; height: 150px;
+                   background-color: #f0f0f0; border: 2px solid #ccc; 
+                   border-radius: 7px; box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+                   display:flex;align-items:center;justify-content:center;
+                   flex-direction:column;">
+          <h2>Your Score is</h2>
+          <h2>${results.score}</h2>
+          </div>
+        `;
+        mainElement.appendChild(scoreElement);
+
+      }
+      // Display results or perform any other action as needed
+      
+    }
+  </script>
+</head>
+<body>
+  <header>
+    <h1>Node.js Quiz</h1>
+  </header>
+  <main>
+    <section class="quiz-section">
+      <h2>Ready To start Your Quiz</h2>
+    </section>
+    <button id="submitBtn" onclick="fetchQuestions()">START</button>
+  </main>
+</body>
+</html>
